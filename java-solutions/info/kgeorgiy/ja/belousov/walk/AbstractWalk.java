@@ -58,7 +58,7 @@ public class AbstractWalk {
                                         Path file = requestedFilesIterator.next();
                                         if (!Files.isRegularFile(file)) continue;
 
-                                        String result = "0".repeat(hasher.getDigestSize() * 2);
+                                        String result = hasher.getEmptyHash();
                                         try {
                                             hasher.setFile(file);
                                             result = hasher.compute();
@@ -72,13 +72,13 @@ public class AbstractWalk {
                             } catch (InvalidPathException | IOException e) {
                                 System.err.print("Could not access the requested file: ");
                                 System.err.println(e.getMessage());
-                                writeResult(output, "0".repeat(hasher.getDigestSize() * 2), fileString);
+                                writeResult(output, hasher.getEmptyHash(), fileString);
                             }
                         }
                     } catch (IOException e) {
                         System.err.print("Unable to write to output file: ");
                         System.err.println(e.getMessage());
-                    } catch (SecurityException e){
+                    } catch (SecurityException e) {
                         System.err.print("Security violation writing to output file: ");
                         System.err.println(e.getMessage());
                     }
@@ -88,7 +88,7 @@ public class AbstractWalk {
                 } catch (IOException e) {
                     System.err.print("Unable to read from input file: ");
                     System.err.println(e.getMessage());
-                } catch (SecurityException e){
+                } catch (SecurityException e) {
                     System.err.print("Security violation reading from input file: ");
                     System.err.println(e.getMessage());
                 }

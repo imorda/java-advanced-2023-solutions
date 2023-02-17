@@ -41,4 +41,9 @@ public abstract class AbstractHasher {
         this.file = file;
         this.hasher.reset();
     }
+
+    public String getEmptyHash() {
+        return "0".repeat(getDigestSize() * 2);
+    }
+
 }
