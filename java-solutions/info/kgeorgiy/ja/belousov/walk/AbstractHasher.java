@@ -9,14 +9,15 @@ import java.security.MessageDigest;
 public abstract class AbstractHasher {
     final protected MessageDigest hasher;
     private Path file;
+    private final byte[] buffer;
 
     protected AbstractHasher(MessageDigest hasher) {
         this.hasher = hasher;
+        this.buffer = new byte[getBlockSize()];
     }
 
     public String compute() throws IOException {
         try (BufferedInputStream file = new BufferedInputStream(Files.newInputStream(this.file))) {
-            byte[] buffer = getBuffer();
             int bytesRead;
             while ((bytesRead = file.read(buffer)) > 0) {
                 hasher.update(buffer, 0, bytesRead);
@@ -31,7 +32,7 @@ public abstract class AbstractHasher {
         return result.toString();
     }
 
-    protected abstract byte[] getBuffer();
+    protected abstract int getBlockSize();
 
     protected int getDigestSize() {
         return hasher.getDigestLength();
@@ -45,5 +46,4 @@ public abstract class AbstractHasher {
     public String getEmptyHash() {
         return "0".repeat(getDigestSize() * 2);
     }
-
 }
