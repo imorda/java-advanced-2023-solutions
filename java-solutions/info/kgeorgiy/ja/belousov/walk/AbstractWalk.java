@@ -78,12 +78,18 @@ public class AbstractWalk {
                     } catch (IOException e) {
                         System.err.print("Unable to write to output file: ");
                         System.err.println(e.getMessage());
+                    } catch (SecurityException e){
+                        System.err.print("Security violation writing to output file: ");
+                        System.err.println(e.getMessage());
                     }
                 } catch (NoSuchFileException e) {
                     System.err.print("Input file does not exist: ");
                     System.err.println(e.getMessage());
                 } catch (IOException e) {
                     System.err.print("Unable to read from input file: ");
+                    System.err.println(e.getMessage());
+                } catch (SecurityException e){
+                    System.err.print("Security violation reading from input file: ");
                     System.err.println(e.getMessage());
                 }
             } catch (InvalidPathException e) {
