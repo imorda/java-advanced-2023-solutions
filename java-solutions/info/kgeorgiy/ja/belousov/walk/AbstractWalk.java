@@ -19,15 +19,25 @@ public class AbstractWalk {
 
     public static void solve(String in, String out, AbstractHasher hasher, IOFunction<Path, Stream<Path>> walker) {
         try {
-            if(in == null){
+            if (in == null) {
                 throw new InvalidPathException("", "Input file is null");
             }
             final Path inputFile = Paths.get(in);
             try {
-                if(out == null){
+                if (out == null) {
                     throw new InvalidPathException("", "Output file is null");
                 }
                 final Path outputFile = Paths.get(out);
+
+                Path parentDir = outputFile.getParent();
+                if (parentDir != null && Files.notExists(parentDir)) {
+                    try {
+                        Files.createDirectories(outputFile.getParent());
+                    } catch (IOException | UnsupportedOperationException e) {
+                        System.err.print("Unable to create parent directory of an output file: ");
+                        System.err.println(e.getMessage());
+                    }
+                }
 
                 try (Stream<String> files = Files.lines(inputFile, StandardCharsets.UTF_8)) {
                     try (BufferedWriter output = new BufferedWriter(Files.newBufferedWriter(outputFile, StandardCharsets.UTF_8))) {
@@ -80,7 +90,7 @@ public class AbstractWalk {
                 System.err.print("Input file path invalid: ");
                 System.err.println(e.getMessage());
             }
-        } catch (InvalidPathException e){
+        } catch (InvalidPathException e) {
             System.err.print("Output file path invalid: ");
             System.err.println(e.getMessage());
         }
