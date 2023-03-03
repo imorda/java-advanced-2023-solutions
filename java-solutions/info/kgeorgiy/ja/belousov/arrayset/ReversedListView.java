@@ -6,15 +6,15 @@ import java.util.List;
 public class ReversedListView<T> extends AbstractList<T> {
     final private List<T> data;
 
-    public static <T> List<T> reverseList(List<T> original){
-        if(original instanceof ReversedListView<T>){
+    private ReversedListView(List<T> data) {
+        this.data = data;
+    }
+
+    public static <T> List<T> reverseList(List<T> original) {
+        if (original instanceof ReversedListView<T>) {
             return ((ReversedListView<T>) original).data; // Optimization
         }
         return new ReversedListView<>(original);
-    }
-
-    private ReversedListView(List<T> data) {
-        this.data = data;
     }
 
     @Override
@@ -42,7 +42,7 @@ public class ReversedListView<T> extends AbstractList<T> {
         return data.remove(convertIndex(index));
     }
 
-    private int convertIndex(int i){
+    private int convertIndex(int i) {
         return size() - 1 - i;
     }
 }
