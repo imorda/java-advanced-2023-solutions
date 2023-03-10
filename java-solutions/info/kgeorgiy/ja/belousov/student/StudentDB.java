@@ -28,7 +28,7 @@ public class StudentDB implements GroupQuery {
                                                                                  Comparator<Map.Entry<GroupName, C>> onEqualSize) {
         return students.stream().collect(Collectors.groupingBy(Student::getGroup, counter)).entrySet()
                 .stream().max(Map.Entry.<GroupName, C>comparingByValue().thenComparing(onEqualSize))
-                .stream().map(Map.Entry::getKey).findFirst().orElse(null);
+                .map(Map.Entry::getKey).orElse(null);
     }
 
     private static <T> List<Student> findStudentsByCriteria(Collection<Student> students,
