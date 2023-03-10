@@ -21,6 +21,13 @@ public class StudentDB implements GroupQuery {
     /**
      * Get the largest group by custom counting criteria with custom comparator on equal groups size
      *
+     * @param students    Collection to search in
+     * @param counter     Collector that accepts the whole group and counts some comparable parameter that is used
+     *                    to determine the largest one
+     * @param onEqualSize When there are few groups with the same largest "parameter" returned by {@code counter}
+     *                    this comparator is used to find the biggest one.
+     *                    It compares elements of type {@code Map.Entry<GroupName, C>}
+     * @param <C>         Returned type of the {@code counter}
      * @return largest group name or null if there is no groups at all
      */
     private static <C extends Comparable<C>> GroupName getLargestGroupByCriteria(Collection<Student> students,
