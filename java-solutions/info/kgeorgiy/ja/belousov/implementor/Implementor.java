@@ -17,6 +17,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public class Implementor implements Impler {
+    private final static String LINE_SEPARATOR = System.lineSeparator();
+
     public static void main(String[] args) {
         if (args.length != 2) {
             System.err.println("Usage: java Implementor <className> <outputDir>");
@@ -64,24 +66,24 @@ public class Implementor implements Impler {
                 writer.write("package ");
                 writer.write(token.getPackage().getName());
                 writer.write(';');
-                writer.write(System.lineSeparator());
-                writer.write(System.lineSeparator());
+                writer.write(LINE_SEPARATOR);
+                writer.write(LINE_SEPARATOR);
 
                 writer.write("public class ");
                 writer.write(implName);
                 writer.write(" implements ");
                 writer.write(getFullyQualifiedTypeName(token));
                 writer.write(" {");
-                writer.write(System.lineSeparator());
+                writer.write(LINE_SEPARATOR);
 
                 for (Method method : token.getMethods()) {
                     if (method.isDefault() || Modifier.isStatic(method.getModifiers())) {
                         continue;
                     }
 
-                    writer.write(System.lineSeparator());
+                    writer.write(LINE_SEPARATOR);
                     writer.write("    @Override");
-                    writer.write(System.lineSeparator());
+                    writer.write(LINE_SEPARATOR);
 
                     writer.write("    public ");
                     writer.write(getFullyQualifiedTypeName(method.getReturnType()));
@@ -97,7 +99,7 @@ public class Implementor implements Impler {
                         }
                     }
                     writer.write(") {");
-                    writer.write(System.lineSeparator());
+                    writer.write(LINE_SEPARATOR);
 
 
                     if (method.getReturnType() != Void.TYPE) {
@@ -110,13 +112,13 @@ public class Implementor implements Impler {
                             writer.write("null");
                         }
                         writer.write(";");
-                        writer.write(System.lineSeparator());
+                        writer.write(LINE_SEPARATOR);
                     }
                     writer.write("    }");
-                    writer.write(System.lineSeparator());
+                    writer.write(LINE_SEPARATOR);
                 }
                 writer.write("}");
-                writer.write(System.lineSeparator());
+                writer.write(LINE_SEPARATOR);
             } catch (IOException | UncheckedIOException | SecurityException e) {
                 throw new ImplerException("Cannot write to file", e);
             }
