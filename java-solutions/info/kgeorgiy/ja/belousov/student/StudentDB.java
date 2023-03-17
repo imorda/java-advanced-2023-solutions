@@ -205,3 +205,6 @@ public class StudentDB implements GroupQuery {
                 Map.Entry.<GroupName, Integer>comparingByKey().reversed());
     }
 }
+
+// 1 3 5 7
+// subset(2, 6) = 3 5
