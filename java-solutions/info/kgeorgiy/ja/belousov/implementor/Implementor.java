@@ -17,17 +17,18 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public class Implementor implements Impler {
-    private final static String LINE_SEPARATOR = System.lineSeparator();
-
     public static void main(String[] args) {
         if (args.length != 2) {
             System.err.println("Usage: java Implementor <className> <outputDir>");
             return;
         }
+
+        Implementor instance = new Implementor();
+
         String className = args[0];
         String outputDir = args[1];
         try {
-            staticImplement(Class.forName(className), Paths.get(outputDir));
+            instance.implement(Class.forName(className), Paths.get(outputDir));
         } catch (InvalidPathException e) {
             System.err.println("Cannot resolve the requested output directory: " + e.getMessage());
         } catch (ImplerException e) {
@@ -45,7 +46,8 @@ public class Implementor implements Impler {
         return type.getTypeName().replace('$', '.');
     }
 
-    public static void staticImplement(Class<?> token, Path root) throws ImplerException {
+    @Override
+    public void implement(Class<?> token, Path root) throws ImplerException {
         if (!token.isInterface()) {
             throw new ImplerException("Requested token is not an interface: " + token);
         }
@@ -59,31 +61,34 @@ public class Implementor implements Impler {
         String implName = token.getSimpleName() + "Impl";
 
         try {
+            String packageName = token.getPackageName();
             Path outputFile = Files.createDirectories(root
-                            .resolve(token.getPackageName().replace(".", File.separator)))
+                            .resolve(packageName.replace(".", File.separator)))
                     .resolve(implName + ".java");
             try (BufferedWriter writer = new BufferedWriter(Files.newBufferedWriter(outputFile, StandardCharsets.UTF_8))) {
-                writer.write("package ");
-                writer.write(token.getPackage().getName());
-                writer.write(';');
-                writer.write(LINE_SEPARATOR);
-                writer.write(LINE_SEPARATOR);
+                if (!packageName.equals("")) {
+                    writer.write("package ");
+                    writer.write(packageName);
+                    writer.write(';');
+                    writer.newLine();
+                    writer.newLine();
+                }
 
                 writer.write("public class ");
                 writer.write(implName);
                 writer.write(" implements ");
                 writer.write(getFullyQualifiedTypeName(token));
                 writer.write(" {");
-                writer.write(LINE_SEPARATOR);
+                writer.newLine();
 
                 for (Method method : token.getMethods()) {
                     if (method.isDefault() || Modifier.isStatic(method.getModifiers())) {
                         continue;
                     }
 
-                    writer.write(LINE_SEPARATOR);
+                    writer.newLine();
                     writer.write("    @Override");
-                    writer.write(LINE_SEPARATOR);
+                    writer.newLine();
 
                     writer.write("    public ");
                     writer.write(getFullyQualifiedTypeName(method.getReturnType()));
@@ -99,7 +104,7 @@ public class Implementor implements Impler {
                         }
                     }
                     writer.write(") {");
-                    writer.write(LINE_SEPARATOR);
+                    writer.newLine();
 
 
                     if (method.getReturnType() != Void.TYPE) {
@@ -112,23 +117,18 @@ public class Implementor implements Impler {
                             writer.write("null");
                         }
                         writer.write(";");
-                        writer.write(LINE_SEPARATOR);
+                        writer.newLine();
                     }
                     writer.write("    }");
-                    writer.write(LINE_SEPARATOR);
+                    writer.newLine();
                 }
                 writer.write("}");
-                writer.write(LINE_SEPARATOR);
+                writer.newLine();
             } catch (IOException | UncheckedIOException | SecurityException e) {
                 throw new ImplerException("Cannot write to file", e);
             }
         } catch (IOException | UnsupportedOperationException | InvalidPathException e) {
             throw new ImplerException("Cannot resolve output file", e);
         }
-    }
-
-    @Override
-    public void implement(Class<?> token, Path root) throws ImplerException {
-        staticImplement(token, root);
     }
 }
