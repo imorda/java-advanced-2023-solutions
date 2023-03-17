@@ -81,7 +81,7 @@ public class StudentDB implements GroupQuery {
      */
     @Override
     public List<GroupName> getGroups(List<Student> students) {
-        return students.stream().map(Student::getGroup).toList();
+        return extractParam(students, Student::getGroup);
     }
 
     /**
@@ -89,9 +89,7 @@ public class StudentDB implements GroupQuery {
      */
     @Override
     public List<String> getFullNames(List<Student> students) {
-        return students.stream()
-                .map(student -> String.join(" ", student.getFirstName(), student.getLastName()))
-                .toList();
+        return extractParam(students, student -> student.getFirstName() + " " + student.getLastName());
     }
 
     /**
