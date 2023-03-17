@@ -12,6 +12,7 @@ import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 public class StudentDB implements GroupQuery {
+    // :NOTE: не нужен
     private final static Student DEFAULT_STUDENT = new Student(-1, "", "", GroupName.values()[0]);
 
     private final static Comparator<? super Student> NAME_ORDERING = Comparator.comparing(Student::getLastName)
@@ -58,6 +59,7 @@ public class StudentDB implements GroupQuery {
      */
     @Override
     public List<String> getFirstNames(List<Student> students) {
+        // :NOTE: вынести общий код
         return students.stream().map(Student::getFirstName).toList();
     }
 
@@ -103,8 +105,9 @@ public class StudentDB implements GroupQuery {
     @Override
     public String getMaxStudentFirstName(List<Student> students) {
         return students.stream()
-                .max(Comparator.naturalOrder()).orElse(DEFAULT_STUDENT)
-                .getFirstName();
+                .max(Comparator.naturalOrder())
+                .map(Student::getFirstName)
+                .orElse("");
     }
 
     /**
@@ -120,6 +123,7 @@ public class StudentDB implements GroupQuery {
      */
     @Override
     public List<Student> sortStudentsByName(Collection<Student> students) {
+        // :NOTE: общая сортировка
         return students.stream().sorted(NAME_ORDERING).toList();
     }
 
@@ -154,7 +158,9 @@ public class StudentDB implements GroupQuery {
     public Map<String, String> findStudentNamesByGroup(Collection<Student> students, GroupName group) {
         return students.stream()
                 .filter(student -> group.equals(student.getGroup()))
-                .collect(Collectors.toUnmodifiableMap(Student::getLastName, Student::getFirstName,
+                .collect(Collectors.toUnmodifiableMap(
+                        Student::getLastName,
+                        Student::getFirstName,
                         BinaryOperator.minBy(Comparator.naturalOrder())));
     }
 
