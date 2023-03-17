@@ -12,9 +12,6 @@ import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 public class StudentDB implements GroupQuery {
-    // :NOTE: не нужен
-    private final static Student DEFAULT_STUDENT = new Student(-1, "", "", GroupName.values()[0]);
-
     private final static Comparator<? super Student> NAME_ORDERING = Comparator.comparing(Student::getLastName)
             .thenComparing(Student::getFirstName).reversed()
             .thenComparing(Comparator.naturalOrder());
@@ -54,13 +51,21 @@ public class StudentDB implements GroupQuery {
                 .map((key) -> new Group(key.getKey(), key.getValue().stream().sorted(studentOrder).toList())).toList();
     }
 
+    private static List<Student> sortStudentByCriteria(Collection<Student> students, Comparator<? super Student> criteria) {
+        return students.stream().sorted(criteria).toList();
+    }
+
+
+    private static <T> List<T> extractParam(List<Student> students, Function<Student, T> extractor) {
+        return students.stream().map(extractor).toList();
+    }
+
     /**
      * @return Unmodifiable list of students first names
      */
     @Override
     public List<String> getFirstNames(List<Student> students) {
-        // :NOTE: вынести общий код
-        return students.stream().map(Student::getFirstName).toList();
+        return extractParam(students, Student::getFirstName);
     }
 
     /**
@@ -68,7 +73,7 @@ public class StudentDB implements GroupQuery {
      */
     @Override
     public List<String> getLastNames(List<Student> students) {
-        return students.stream().map(Student::getLastName).toList();
+        return extractParam(students, Student::getLastName);
     }
 
     /**
@@ -115,7 +120,7 @@ public class StudentDB implements GroupQuery {
      */
     @Override
     public List<Student> sortStudentsById(Collection<Student> students) {
-        return students.stream().sorted().toList();
+        return sortStudentByCriteria(students, Comparator.naturalOrder());
     }
 
     /**
@@ -123,8 +128,7 @@ public class StudentDB implements GroupQuery {
      */
     @Override
     public List<Student> sortStudentsByName(Collection<Student> students) {
-        // :NOTE: общая сортировка
-        return students.stream().sorted(NAME_ORDERING).toList();
+        return sortStudentByCriteria(students, NAME_ORDERING);
     }
 
     /**
