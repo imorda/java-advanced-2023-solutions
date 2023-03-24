@@ -333,10 +333,10 @@ public class Implementor implements JarImpler {
         try {
             Path srcPath = null;
             try {
-                srcPath = Files.createTempDirectory("implementor-src");
+                srcPath = Files.createDirectory(Path.of("implementor-src"));
                 Path compilePath = null;
                 try {
-                    compilePath = Files.createTempDirectory("implementor-class");
+                    compilePath = Files.createDirectory(Path.of("implementor-class"));
 
                     implement(token, srcPath);
                     compile(srcPath, compilePath, getImplPath(token, srcPath), getContextClasspath(token));
