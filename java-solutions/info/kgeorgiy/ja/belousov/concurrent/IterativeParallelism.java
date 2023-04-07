@@ -11,6 +11,13 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+
+/**
+ * A class that implements iterative parallelism computing for
+ * scalar methods described in {@link ScalarIP} interface
+ *
+ * @author Timofey Belousov
+ */
 public class IterativeParallelism implements ScalarIP {
     private static <T> BiFunction<List<T>, Integer, List<List<T>>> listSplitter() {
         return (original, count) -> {
