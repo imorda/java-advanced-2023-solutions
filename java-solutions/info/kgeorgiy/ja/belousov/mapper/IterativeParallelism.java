@@ -6,6 +6,7 @@ import info.kgeorgiy.java.advanced.mapper.ParallelMapper;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -42,21 +43,8 @@ public class IterativeParallelism implements ScalarIP {
         };
     }
 
-    private <T> void removeNulls(ArrayList<T> original) {
-        int newSize = 0;
-        for (int i = 0; i < original.size(); i++) {
-            if (original.get(i) != null) {
-                original.set(newSize, original.get(i));
-                newSize++;
-            }
-        }
-        if (original.size() > newSize) {
-            original.subList(newSize, original.size()).clear();
-        }
-    }
-
     private <T, R> R splitAndMap(int threads, BiFunction<List<T>, Integer, List<List<T>>> splitter,
-                                 Function<List<T>, R> solver,
+                                 Function<List<T>, Optional<R>> solver,
                                  Function<List<R>, R> resultCombiner, List<T> data) throws InterruptedException {
         List<List<T>> splitData = splitter.apply(data, threads);
         if (mapper == null) {
@@ -67,12 +55,13 @@ public class IterativeParallelism implements ScalarIP {
         return computeThreaded(mapper, splitData, solver, resultCombiner);
     }
 
-    private <T, R> R computeThreaded(ParallelMapper mapper, List<List<T>> splitData, Function<List<T>, R> solver,
+    private <T, R> R computeThreaded(ParallelMapper mapper, List<List<T>> splitData, Function<List<T>, Optional<R>> solver,
                                      Function<List<R>, R> resultCombiner) throws InterruptedException {
-        ArrayList<R> threadSolveResults = new ArrayList<>(mapper.map(solver, splitData));
+        ArrayList<Optional<R>> threadSolveResults = new ArrayList<>(mapper.map(solver, splitData));
 
-        removeNulls(threadSolveResults);
-        return resultCombiner.apply(threadSolveResults);
+        List<R> preparedResults = threadSolveResults.stream().filter(Optional::isPresent).map(Optional::get).toList();
+
+        return resultCombiner.apply(preparedResults);
     }
 
     @Override
@@ -91,7 +80,7 @@ public class IterativeParallelism implements ScalarIP {
                     curMax = datum;
                 }
             }
-            return curMax;
+            return Optional.ofNullable(curMax);
         }, (threadedResult) -> threadedResult.stream().max(comparator).orElseThrow(), values);
     }
 
@@ -120,10 +109,10 @@ public class IterativeParallelism implements ScalarIP {
 
                 if (predicate.test(datum)) {
                     sharedState.setFinished();
-                    return true;
+                    return Optional.of(true);
                 }
             }
-            return false;
+            return Optional.of(false);
         }, threadedResult -> threadedResult.stream().anyMatch(val -> val), values);
     }
 
@@ -141,7 +130,7 @@ public class IterativeParallelism implements ScalarIP {
                     count++;
                 }
             }
-            return count;
+            return Optional.of(count);
         }, threadedResult -> threadedResult.stream().mapToInt(Integer::intValue).sum(), values);
     }
 }

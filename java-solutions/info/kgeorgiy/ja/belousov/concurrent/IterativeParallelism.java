@@ -2,10 +2,7 @@ package info.kgeorgiy.ja.belousov.concurrent;
 
 import info.kgeorgiy.java.advanced.concurrent.ScalarIP;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -32,30 +29,17 @@ public class IterativeParallelism implements ScalarIP {
         };
     }
 
-    private <T> void removeNulls(ArrayList<T> original) {
-        int newSize = 0;
-        for (int i = 0; i < original.size(); i++) {
-            if (original.get(i) != null) {
-                original.set(newSize, original.get(i));
-                newSize++;
-            }
-        }
-        if (original.size() > newSize) {
-            original.subList(newSize, original.size()).clear();
-        }
-    }
-
     private <T, R> R computeThreaded(int threads, BiFunction<List<T>, Integer, List<List<T>>> splitter,
                                      Function<List<T>, R> solver,
                                      Function<List<R>, R> resultCombiner, List<T> data) throws InterruptedException {
         List<List<T>> threadsData = splitter.apply(data, threads);
 
         List<Thread> threadInstances = new ArrayList<>();
-        ArrayList<R> threadSolveResults = new ArrayList<>(Collections.nCopies(threads, null));
+        ArrayList<Optional<R>> threadSolveResults = new ArrayList<>(Collections.nCopies(threads, Optional.empty()));
 
         for (int i = 0; i < threads; i++) {
             final int finalI = i;
-            threadInstances.add(new Thread(() -> threadSolveResults.set(finalI, solver.apply(threadsData.get(finalI)))));
+            threadInstances.add(new Thread(() -> threadSolveResults.set(finalI, Optional.ofNullable(solver.apply(threadsData.get(finalI))))));
         }
 
         try {
@@ -77,8 +61,9 @@ public class IterativeParallelism implements ScalarIP {
             throw e;
         }
 
-        removeNulls(threadSolveResults);
-        return resultCombiner.apply(threadSolveResults);
+        List<R> preparedResults = threadSolveResults.stream().filter(Optional::isPresent).map(Optional::get).toList();
+
+        return resultCombiner.apply(preparedResults);
     }
 
     @Override
