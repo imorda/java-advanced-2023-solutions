@@ -6,7 +6,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.function.*;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 
 /**
@@ -30,10 +32,10 @@ public class IterativeParallelism implements ScalarIP {
         };
     }
 
-    private <T> void removeNulls(ArrayList<T> original){
+    private <T> void removeNulls(ArrayList<T> original) {
         int newSize = 0;
-        for(int i = 0; i < original.size(); i++){
-            if(original.get(i) != null){
+        for (int i = 0; i < original.size(); i++) {
+            if (original.get(i) != null) {
                 original.set(newSize, original.get(i));
                 newSize++;
             }
@@ -44,8 +46,8 @@ public class IterativeParallelism implements ScalarIP {
     }
 
     private <T, R> R computeThreaded(int threads, BiFunction<List<T>, Integer, List<List<T>>> splitter,
-                                        Function<List<T>, R> solver,
-                                        Function<List<R>, R> resultCombiner, List<T> data) throws InterruptedException {
+                                     Function<List<T>, R> solver,
+                                     Function<List<R>, R> resultCombiner, List<T> data) throws InterruptedException {
         List<List<T>> threadsData = splitter.apply(data, threads);
 
         List<Thread> threadInstances = new ArrayList<>();
@@ -61,13 +63,14 @@ public class IterativeParallelism implements ScalarIP {
             for (Thread thread : threadInstances) {
                 thread.join();
             }
-        } catch (InterruptedException e){
-            for(Thread thread: threadInstances){
-                if(thread.isAlive()){
+        } catch (InterruptedException e) {
+            for (Thread thread : threadInstances) {
+                if (thread.isAlive()) {
                     thread.interrupt();
                     try {
                         thread.join();
-                    } catch (InterruptedException ignored){}
+                    } catch (InterruptedException ignored) {
+                    }
                 }
             }
 
@@ -117,11 +120,11 @@ public class IterativeParallelism implements ScalarIP {
                     Thread.currentThread().interrupt();
                     break;
                 }
-                if (sharedState.isFinished()){
+                if (sharedState.isFinished()) {
                     break;
                 }
 
-                if(predicate.test(datum)){
+                if (predicate.test(datum)) {
                     sharedState.setFinished();
                     return true;
                 }
