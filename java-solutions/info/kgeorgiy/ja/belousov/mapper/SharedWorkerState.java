@@ -1,4 +1,4 @@
-package info.kgeorgiy.ja.belousov.concurrent;
+package info.kgeorgiy.ja.belousov.mapper;
 
 /**
  * A helper class to store the shared state of the {@link IterativeParallelism}

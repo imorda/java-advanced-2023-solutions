@@ -1,12 +1,14 @@
-package info.kgeorgiy.ja.belousov.concurrent;
+package info.kgeorgiy.ja.belousov.mapper;
 
 import info.kgeorgiy.java.advanced.concurrent.ScalarIP;
+import info.kgeorgiy.java.advanced.mapper.ParallelMapper;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.function.*;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 
 /**
@@ -16,6 +18,16 @@ import java.util.function.*;
  * @author Timofey Belousov
  */
 public class IterativeParallelism implements ScalarIP {
+    private final ParallelMapper mapper;
+
+    public IterativeParallelism(ParallelMapper mapper) {
+        this.mapper = mapper;
+    }
+
+    public IterativeParallelism() {
+        mapper = null;
+    }
+
     private static <T> BiFunction<List<T>, Integer, List<List<T>>> listSplitter() {
         return (original, count) -> {
             int lastBorder = 0;
@@ -30,10 +42,10 @@ public class IterativeParallelism implements ScalarIP {
         };
     }
 
-    private <T> void removeNulls(ArrayList<T> original){
+    private <T> void removeNulls(ArrayList<T> original) {
         int newSize = 0;
-        for(int i = 0; i < original.size(); i++){
-            if(original.get(i) != null){
+        for (int i = 0; i < original.size(); i++) {
+            if (original.get(i) != null) {
                 original.set(newSize, original.get(i));
                 newSize++;
             }
@@ -43,36 +55,21 @@ public class IterativeParallelism implements ScalarIP {
         }
     }
 
-    private <T, R> R computeThreaded(int threads, BiFunction<List<T>, Integer, List<List<T>>> splitter,
-                                        Function<List<T>, R> solver,
-                                        Function<List<R>, R> resultCombiner, List<T> data) throws InterruptedException {
-        List<List<T>> threadsData = splitter.apply(data, threads);
-
-        List<Thread> threadInstances = new ArrayList<>();
-        ArrayList<R> threadSolveResults = new ArrayList<>(Collections.nCopies(threads, null));
-
-        for (int i = 0; i < threads; i++) {
-            final int finalI = i;
-            threadInstances.add(new Thread(() -> threadSolveResults.set(finalI, solver.apply(threadsData.get(finalI)))));
-        }
-
-        try {
-            threadInstances.forEach(Thread::start);
-            for (Thread thread : threadInstances) {
-                thread.join();
+    private <T, R> R splitAndMap(int threads, BiFunction<List<T>, Integer, List<List<T>>> splitter,
+                                 Function<List<T>, R> solver,
+                                 Function<List<R>, R> resultCombiner, List<T> data) throws InterruptedException {
+        List<List<T>> splitData = splitter.apply(data, threads);
+        if (mapper == null) {
+            try (ParallelMapperImpl localMapper = new ParallelMapperImpl(threads)) {
+                return computeThreaded(localMapper, splitData, solver, resultCombiner);
             }
-        } catch (InterruptedException e){
-            for(Thread thread: threadInstances){
-                if(thread.isAlive()){
-                    thread.interrupt();
-                    try {
-                        thread.join();
-                    } catch (InterruptedException ignored){}
-                }
-            }
-
-            throw e;
         }
+        return computeThreaded(mapper, splitData, solver, resultCombiner);
+    }
+
+    private <T, R> R computeThreaded(ParallelMapper mapper, List<List<T>> splitData, Function<List<T>, R> solver,
+                                     Function<List<R>, R> resultCombiner) throws InterruptedException {
+        ArrayList<R> threadSolveResults = new ArrayList<>(mapper.map(solver, splitData));
 
         removeNulls(threadSolveResults);
         return resultCombiner.apply(threadSolveResults);
@@ -80,7 +77,7 @@ public class IterativeParallelism implements ScalarIP {
 
     @Override
     public <T> T maximum(int threads, List<? extends T> values, Comparator<? super T> comparator) throws InterruptedException {
-        return computeThreaded(threads, listSplitter(), (data) -> {
+        return splitAndMap(threads, listSplitter(), (data) -> {
             T curMax = null;
             for (T datum : data) {
                 if (Thread.interrupted()) {
@@ -111,17 +108,17 @@ public class IterativeParallelism implements ScalarIP {
     @Override
     public <T> boolean any(int threads, List<? extends T> values, Predicate<? super T> predicate) throws InterruptedException {
         SharedWorkerState sharedState = new SharedWorkerState();
-        return computeThreaded(threads, listSplitter(), (data) -> {
+        return splitAndMap(threads, listSplitter(), (data) -> {
             for (T datum : data) {
                 if (Thread.interrupted()) {
                     Thread.currentThread().interrupt();
                     break;
                 }
-                if (sharedState.isFinished()){
+                if (sharedState.isFinished()) {
                     break;
                 }
 
-                if(predicate.test(datum)){
+                if (predicate.test(datum)) {
                     sharedState.setFinished();
                     return true;
                 }
@@ -132,7 +129,7 @@ public class IterativeParallelism implements ScalarIP {
 
     @Override
     public <T> int count(int threads, List<? extends T> values, Predicate<? super T> predicate) throws InterruptedException {
-        return computeThreaded(threads, listSplitter(), (data) -> {
+        return splitAndMap(threads, listSplitter(), (data) -> {
             int count = 0;
             for (T datum : data) {
                 if (Thread.interrupted()) {
