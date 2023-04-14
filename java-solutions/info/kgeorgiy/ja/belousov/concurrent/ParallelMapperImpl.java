@@ -19,6 +19,8 @@ public class ParallelMapperImpl implements ParallelMapper {
     /**
      * A constructor that creates an instance of {@link ParallelMapperImpl} that
      * uses {@code threads_count} threads for parallel computing.
+     * Note: created threads ignore all runtime exceptions thrown by an executing task,
+     * the task must handle them itself.
      *
      * @param threads_count number of treads to create
      */
@@ -38,7 +40,10 @@ public class ParallelMapperImpl implements ParallelMapper {
                             task = tasks.poll();
                         }
 
-                        task.run();
+                        try {
+                            task.run();
+                        } catch (RuntimeException ignored) {
+                        }
                     }
                 } catch (InterruptedException ignored) {
                 } finally {
@@ -56,15 +61,21 @@ public class ParallelMapperImpl implements ParallelMapper {
         List<R> result = new ArrayList<>(Collections.nCopies(args.size(), null));
 
         ThreadSafeCounter progressCounter = new ThreadSafeCounter();
+        AtomicContainer<RuntimeException> exception = new AtomicContainer<>(null);
 
         synchronized (tasks) {
             for (int i = 0; i < args.size(); i++) {
                 int finalI = i;
                 tasks.add(() -> {
-                    result.set(finalI, f.apply(args.get(finalI)));
+                    try {
+                        result.set(finalI, f.apply(args.get(finalI)));
 
-                    synchronized (progressCounter) {
-                        progressCounter.increment();
+                        synchronized (progressCounter) {
+                            progressCounter.increment();
+                            progressCounter.notify();
+                        }
+                    } catch (RuntimeException e) {
+                        exception.setValue(e);
                         progressCounter.notify();
                     }
                 });
@@ -74,6 +85,10 @@ public class ParallelMapperImpl implements ParallelMapper {
 
         synchronized (progressCounter) {
             while (progressCounter.getValue() < args.size()) {
+                RuntimeException e = exception.getValue();
+                if (e != null) {
+                    throw e;
+                }
                 progressCounter.wait();
             }
             return result;
