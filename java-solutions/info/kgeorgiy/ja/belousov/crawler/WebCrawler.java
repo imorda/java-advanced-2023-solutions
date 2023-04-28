@@ -14,7 +14,6 @@ import java.util.concurrent.*;
  */
 public class WebCrawler implements Crawler {
     final Downloader downloader;
-    final int perHostLimit;
 
     final ExecutorService downloaderPool;
     final ExecutorService extractorPool;
@@ -26,11 +25,10 @@ public class WebCrawler implements Crawler {
      * @param downloader  Downloader implementation that will be used to download all links found
      * @param downloaders maximum number of concurrent downloads
      * @param extractors  maximum number of concurrent html parsers for link extraction
-     * @param perHost     maximum number of concurrent connections to a single host
+     * @param perHost     reserved
      */
     public WebCrawler(Downloader downloader, int downloaders, int extractors, int perHost) {
         this.downloader = downloader;
-        perHostLimit = perHost;
         downloaderPool = Executors.newFixedThreadPool(downloaders);
         extractorPool = Executors.newFixedThreadPool(extractors);
     }
@@ -44,7 +42,7 @@ public class WebCrawler implements Crawler {
      *             - Depth (int) - crawling depth
      *             - downloads (int) - max number of concurrent downloads
      *             - extractors (int) - max number of concurrent extractors
-     *             - perHost (int) - max number of concurrent connections to a single host
+     *             - perHost (int) - reserved
      */
     public static void main(String[] args) {
         if (args == null || args.length < 1) {
