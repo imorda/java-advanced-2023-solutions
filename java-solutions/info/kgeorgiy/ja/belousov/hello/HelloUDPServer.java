@@ -53,7 +53,12 @@ public class HelloUDPServer implements HelloServer {
             System.err.printf("Cannot bind socket: %s%n", e.getMessage());
         }
 
-        Runtime.getRuntime().addShutdownHook(new Thread(instance::close));
+        try {
+            System.in.read();
+        } catch (IOException ignored) {
+        }
+
+        instance.close();
     }
 
     /**

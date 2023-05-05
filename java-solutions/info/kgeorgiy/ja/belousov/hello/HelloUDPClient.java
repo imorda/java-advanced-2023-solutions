@@ -89,7 +89,7 @@ public class HelloUDPClient implements HelloClient {
                                 System.err.format("Error sending packet: %s%n", e.getMessage());
                             }
 
-                            byte[] buffer = new byte[requestText.length() + HelloUDPServer.RESPONSE_PREFIX.length()];
+                            byte[] buffer = new byte[socket.getReceiveBufferSize()];
                             DatagramPacket response = new DatagramPacket(buffer, buffer.length);
 
                             try {
