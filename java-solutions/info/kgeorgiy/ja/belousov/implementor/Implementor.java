@@ -160,7 +160,7 @@ public class Implementor implements JarImpler {
             compilerClasspath += File.pathSeparator + contextClasspath;
         }
 
-        final String[] args = {"-cp", compilerClasspath, "-d", out.toString(), srcFile.toString()};
+        final String[] args = {"-cp", compilerClasspath, "-d", out.toString(), "-encoding", "UTF-8", srcFile.toString()};
         final int exitCode = compiler.run(null, null, null, args);
         if (exitCode != 0) {
             throw new ImplerException(String.format("Compiler returned %d code", exitCode));

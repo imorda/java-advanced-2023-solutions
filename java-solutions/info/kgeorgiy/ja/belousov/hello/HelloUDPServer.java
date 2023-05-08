@@ -99,7 +99,9 @@ public class HelloUDPServer implements HelloServer {
                                         try {
                                             socket.send(response);
                                         } catch (IOException | IllegalArgumentException e) {
-                                            System.err.format("Error sending packet: %s%n", e.getMessage());
+                                            if (!socket.isClosed()) {
+                                                System.err.format("Error sending packet: %s%n", e.getMessage());
+                                            }
                                         }
                                     } finally {
                                         availableResource.release();

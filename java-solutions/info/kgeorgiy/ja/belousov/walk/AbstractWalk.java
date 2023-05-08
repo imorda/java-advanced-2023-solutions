@@ -1,9 +1,6 @@
 package info.kgeorgiy.ja.belousov.walk;
 
-import java.io.BufferedWriter;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.Writer;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.Iterator;
@@ -85,7 +82,7 @@ public class AbstractWalk {
                 } catch (NoSuchFileException e) {
                     System.err.print("Input file does not exist: ");
                     System.err.println(e.getMessage());
-                } catch (IOException e) {
+                } catch (IOException | UncheckedIOException e) {  // File Stream.HasNext wraps IOException into unchecked one (undocumented btw). Bad play, java!
                     System.err.print("Unable to read from input file: ");
                     System.err.println(e.getMessage());
                 } catch (SecurityException e) {
