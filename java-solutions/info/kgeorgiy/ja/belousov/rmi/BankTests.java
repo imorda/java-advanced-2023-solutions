@@ -19,6 +19,9 @@ import java.util.concurrent.Executors;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
+/**
+ * Unit tests for RMI Bank application
+ */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class BankTests {
     private static final int PERSONS_PER_TEST = 20;
@@ -27,12 +30,24 @@ public class BankTests {
 
     private static Bank bank;
 
+    /**
+     * Initialization for tests, launches server and RMI registry
+     *
+     * @throws MalformedURLException if the specified port produces invalid URL
+     * @throws NotBoundException     if server has failed to bind bank class
+     * @throws RemoteException       if any of RMI connections failed
+     */
     @BeforeClass
     public static void initialize() throws MalformedURLException, NotBoundException, RemoteException {
         Server.main();
         bank = (Bank) Naming.lookup(Server.getHostName(Server.DEFAULT_PORT));
     }
 
+    /**
+     * Main method for running tests as a standalone application
+     *
+     * @param args ignored
+     */
     public static void main(String[] args) {
         JUnitCore junit = new JUnitCore();
         Result result = junit.run(BankTests.class);
@@ -147,6 +162,9 @@ public class BankTests {
         }
     }
 
+    /**
+     * Tests {@link Person} creation and get obtaining.
+     */
     @Test
     public void test01_createAndGet() throws RemoteException {
         for (int i = 0; i < PERSONS_PER_TEST; i++) {
@@ -160,6 +178,9 @@ public class BankTests {
         testPersons("test01");
     }
 
+    /**
+     * Tests random-named bank accounts logic (not bound to any person)
+     */
     @Test
     public void test05_anonAccounts() throws RemoteException {
         for (int i = 0; i < ACCOUNTS_PER_PERSON * PERSONS_PER_TEST; i++) {
@@ -173,6 +194,9 @@ public class BankTests {
         }
     }
 
+    /**
+     * Tests random bank accounts (bound to random persons) logic.
+     */
     @Test
     public void test10_namedAccounts() {
         createPersons("test10");
@@ -180,6 +204,9 @@ public class BankTests {
         iterate((i, j) -> testAccountMath("test10" + i + "id:test10" + j));
     }
 
+    /**
+     * Parallel tests for random bank accounts (bound to random persons) logic.
+     */
     @Test
     public void test15_accountsParallel() throws RemoteException {
         parallel((x) -> createPersons(x + "test15"));
@@ -192,6 +219,12 @@ public class BankTests {
         parallel((x) -> iterate((i, j) -> testAccountMath(x + "test15" + i + "id:" + x + "test15" + j)));
     }
 
+    /**
+     * Tests for local and remote {@link Person} and {@link Account} implementation logic.
+     * Local implementation should store a snapshot of accounts state at the moment of its creation,
+     * not using network after that and keeping its state independently of the remote state changes.
+     * And vice versa.
+     */
     @Test
     public void test20_localRemoteConsistency() throws RemoteException {
         createPersons("test20");
@@ -265,6 +298,9 @@ public class BankTests {
         });
     }
 
+    /**
+     * Parallel tests for local {@link Account} implementation
+     */
     @Test
     public void test25_localParallel() {
         parallel((x) -> createPersons(x + "test25"));
