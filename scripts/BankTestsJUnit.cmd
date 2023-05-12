@@ -3,4 +3,4 @@ javac -cp ..\java-solutions;..\lib\* ^
       ..\java-solutions\info\kgeorgiy\ja\belousov\bank\* && ^
 java -cp out;..\lib\* ^
       org.junit.runner.JUnitCore ^
-      info.kgeorgiy.ja.belousov.rmi.BankTests
+      info.kgeorgiy.ja.belousov.bank.BankTests
