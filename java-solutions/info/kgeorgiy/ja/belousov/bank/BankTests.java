@@ -1,4 +1,4 @@
-package info.kgeorgiy.ja.belousov.rmi;
+package info.kgeorgiy.ja.belousov.bank;
 
 import org.junit.Assert;
 import org.junit.BeforeClass;

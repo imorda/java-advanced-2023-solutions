@@ -1,24 +1,28 @@
-package info.kgeorgiy.ja.belousov.rmi;
+package info.kgeorgiy.ja.belousov.bank;
 
-import java.io.Serializable;
+import java.rmi.RemoteException;
+import java.rmi.server.UnicastRemoteObject;
 import java.util.Objects;
 
 /**
- * A local {@link Account} implementation, should be used as a snapshot of any online data, can be serialized.
+ * Server-side (RMI) {@link Account} implementation
  */
-public class LocalAccount implements Account, Serializable {
+public class RemoteAccount extends UnicastRemoteObject implements Account {
     private final String id;
     private int amount;
 
     /**
-     * Basic constructor that creates an account with the specified account id and {@code amount} balance
+     * Basic constructor that exports a newly created object and creates an account
+     * with the specified id number and empty balance
      *
-     * @param id     account id
-     * @param amount default balance
+     * @param id   an account id number
+     * @param port the port for exporting
+     * @throws RemoteException if any RMI connection fails
      */
-    public LocalAccount(final String id, final int amount) {
+    public RemoteAccount(final String id, final int port) throws RemoteException {
+        super(port);
         this.id = id;
-        this.amount = amount;
+        amount = 0;
     }
 
     @Override
@@ -44,12 +48,13 @@ public class LocalAccount implements Account, Serializable {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof LocalAccount that)) return false;
+        if (!(o instanceof RemoteAccount that)) return false;
+        if (!super.equals(o)) return false;
         return getAmount() == that.getAmount() && Objects.equals(getId(), that.getId());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getId(), getAmount());
+        return Objects.hash(super.hashCode(), getId(), getAmount());
     }
 }

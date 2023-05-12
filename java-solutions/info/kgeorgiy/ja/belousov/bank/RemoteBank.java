@@ -1,4 +1,4 @@
-package info.kgeorgiy.ja.belousov.rmi;
+package info.kgeorgiy.ja.belousov.bank;
 
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
