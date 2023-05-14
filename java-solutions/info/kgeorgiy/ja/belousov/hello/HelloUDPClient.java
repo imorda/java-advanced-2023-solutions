@@ -79,7 +79,7 @@ public class HelloUDPClient implements HelloClient {
                     socket.setSoTimeout(SOCKET_READ_TIMEOUT_MILLIS);
 
                     for (int request = 0; request < requests; ++request) {
-                        String requestText = String.format("%s%d_%d", prefix, threadFinal, request);
+                        String requestText = String.format("%s%d_%d", prefix, threadFinal + 1, request + 1);
                         DatagramPacket packet = new DatagramPacket(requestText.getBytes(), requestText.length(), address);
 
                         while (!socket.isClosed() && !Thread.currentThread().isInterrupted()) {
