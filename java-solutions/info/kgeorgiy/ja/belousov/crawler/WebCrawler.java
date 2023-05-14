@@ -92,7 +92,13 @@ public class WebCrawler implements Crawler {
         ConcurrentMap<String, IOException> errors = new ConcurrentHashMap<>();
 
         Phaser countDown = new Phaser(1);
-        downloadImpl(url, depth, countDown, downloads, errors);
+
+        List<Phaser> synchronizer = new ArrayList<>(depth + 1);
+        for (int i = 0; i <= depth; i++) {
+            synchronizer.add(new Phaser(0));
+        }
+
+        downloadImpl(url, depth, countDown, downloads, errors, synchronizer);
 
         countDown.arriveAndAwaitAdvance();
 
@@ -110,37 +116,47 @@ public class WebCrawler implements Crawler {
     /**
      * Implementation that submits the given download task to the available thread pool.
      *
-     * @param url       link to download from
-     * @param depth     maximum depth for crawling
-     * @param countDown used to count remaining pages to download, must indicate the number of active downloads before
-     *                  the method was called (when this method is called for the first download, it must indicate 0)
-     * @param downloads <em>Thread-safe</em> set of already downloaded links
-     * @param errors    <em>Thread-safe</em> map of erroneous URLs
+     * @param url          link to download from
+     * @param depth        maximum depth for crawling
+     * @param countDown    used to count remaining pages to download, must indicate the number of active downloads before
+     *                     the method was called (when this method is called for the first download, it must indicate 0)
+     * @param downloads    <em>Thread-safe</em> set of already downloaded links
+     * @param errors       <em>Thread-safe</em> map of erroneous URLs
+     * @param synchronizer List of exactly {@code depth}+1 {@link Phaser} instances for synchronizing bfs layers.
      */
-    private void downloadImpl(String url, int depth, Phaser countDown, Set<String> downloads, ConcurrentMap<String, IOException> errors) {
+    private void downloadImpl(String url, int depth, Phaser countDown, Set<String> downloads,
+                              ConcurrentMap<String, IOException> errors, List<Phaser> synchronizer) {
         if (downloads.add(url)) {
             countDown.register();
+            synchronizer.get(depth - 1).register();
             downloaderPool.submit(() -> {
                 try {
                     Document document = downloader.download(url);
+
+                    synchronizer.get(depth).register();
+                    synchronizer.get(depth).arriveAndAwaitAdvance();
+                    synchronizer.get(depth).arriveAndDeregister();
+
 
                     extractorPool.submit(() -> {
                         try {
                             if (depth > 1) {
                                 List<String> links = document.extractLinks();
                                 for (String link : links) {
-                                    downloadImpl(link, depth - 1, countDown, downloads, errors);
+                                    downloadImpl(link, depth - 1, countDown, downloads, errors, synchronizer);
                                 }
                             }
                         } catch (IOException e) {
                             errors.put(url, e);
                         } finally {
                             countDown.arriveAndDeregister();
+                            synchronizer.get(depth - 1).arriveAndDeregister();
                         }
                     });
                 } catch (IOException e) {
                     errors.put(url, e);
                     countDown.arriveAndDeregister();
+                    synchronizer.get(depth - 1).arriveAndDeregister();
                 }
             });
         }
